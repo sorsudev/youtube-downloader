@@ -1,0 +1,16 @@
+{
+  "name": "youtube-download",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Oscar Hugo Cardenas Lopez <oscardev@cacyberlo.com.mx> (https://github.com/sorsudev)",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "got": "^9.6.0",
+    "ytdl-core": "^0.29.3"
+  }
+}
