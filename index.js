@@ -1,18 +1,18 @@
-const url = 'https://youtube.com/watch?v=';
 const got = require('got');
 const cheerio = require('cheerio');
 const readline = require('readline');
 const path = require('path');
 const fs = require('fs');
 const ytdl = require('ytdl-core');
+let id = 'youtube-id';
 
-function processVideo(id){
-  let finalUrl = `${url}${id}`;
-  console.log(finalUrl);
+function downloadVideo(finalUrl){
   return new Promise( (resolve, reject) => {
+    let id = finalUrl.split('watch?v=').pop();
     ytdl.getInfo(id, (err, info) => {
       if (err) throw err;
-      const output = path.resolve(__dirname, `${info.title}.mp4`);
+      let name = info.title.replace(/\//,'-');
+      const output = path.resolve(__dirname, `${name}.mp4`);
       const video = ytdl(finalUrl);
       let starttime;
 
@@ -40,28 +40,45 @@ function processVideo(id){
 
     });
   });
+
 }
 
-got('https://www.youtube.com/playlist?list=PL1PXwlmbNk-qEx7YWPaAggUjEp-LLLtqX').then( res => {
-  const $ = cheerio.load(res.body);
-  const videoObjects = $('tr');
-  let videoIds = [];
-  videoObjects.map( (key, videoData) => {
-    videoIds.push(videoData['attribs']['data-video-id']);
-  });
+function getFinalUrl(id){
+  const baseUrl = 'https://youtube.com/watch?v=';
+  return `${baseUrl}${id}`;
+}
 
-  let lastId = videoIds[videoIds.length - 1];
-  let index = 0;
+function processId(id){
+  return downloadVideo(getFinalUrl(id));
+}
 
-  function getInfo(id){
-    if (id === lastId)
-      return processVideo(id).then( ()=> {});
-
-    return processVideo(id).then( ()=> {
-      index+=1;
-      getInfo(videoIds[index]);
+function playlistLogic(listId){
+  got(`https://www.youtube.com/playlist?list=${listId}`).then( res => {
+    const $ = cheerio.load(res.body);
+    const videoObjects = $('tr');
+    let videoIds = [];
+    videoObjects.map( (key, videoData) => {
+      videoIds.push(videoData['attribs']['data-video-id']);
     });
-  }
 
-  getInfo(videoIds[index]);
-});
+    let lastId = videoIds[videoIds.length - 1];
+    let index = 0;
+
+    function getInfo(id){
+      if (id === lastId)
+        return processId(id).then( ()=> {});
+
+      return processId(id).then( ()=> {
+        index+=1;
+        getInfo(videoIds[index]);
+      });
+    }
+
+    getInfo(videoIds[index]);
+  });
+}
+
+if (id.length === 11)
+  return downloadVideo(getFinalUrl(id));
+
+playlistLogic(id);
